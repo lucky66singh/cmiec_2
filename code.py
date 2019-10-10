@@ -307,7 +307,7 @@ t_stat_het=[]
 for i in range(1, len(Y_het.columns)):
     (X,Y) = transform_ts_data(Y_het.iloc[:,i])
     (beta_hat_het, residuals_het) = calc_ols_estimator(X,Y)
-    t_stat_b.append( calc_t_stat( pd.DataFrame(np.diag(residuals_het ** 2) )
+    t_stat_het.append( calc_t_stat( pd.DataFrame(np.diag(residuals_het ** 2) )
                                   ,X
                                   ,beta_hat
                                   ,0
@@ -368,15 +368,15 @@ for i in range(0, len(Y_het.columns)):
                                                      beta_hat_restric
                                                      )
                                )
-    t_stat_resid_boot_het.append(float(t_stat_b[i]))
+    t_stat_resid_boot_het.append(float(t_stat_het[i]))
     t_stat_resid_boot_het.sort()
-    t_stat_wild_two_boot_het.append(float(t_stat_b[i]))
+    t_stat_wild_two_boot_het.append(float(t_stat_het[i]))
     t_stat_wild_two_boot_het.sort()
-    t_stat_wild_gaus_boot_het.append(float(t_stat_b[i]))
+    t_stat_wild_gaus_boot_het.append(float(t_stat_het[i]))
     t_stat_wild_gaus_boot_het.sort()  
-    t_stat_block_het.append(float(t_stat_b[i]))
+    t_stat_block_het.append(float(t_stat_het[i]))
     t_stat_block_het.sort()
-    t_stat_sieve_het.append(float(t_stat_b[i]))
+    t_stat_sieve_het.append(float(t_stat_het[i]))
     t_stat_sieve_het.sort()
 
         ##check if condition is correct
@@ -393,7 +393,7 @@ t_stat_dep=[]
 for i in range(1, len(Y_dep.columns)):
     (X,Y) = transform_ts_data(Y_dep.iloc[:,i])
     (beta_hat_dep, residuals_dep) = calc_ols_estimator(X,Y)
-    t_stat_b.append( calc_t_stat( pd.DataFrame(np.diag(residuals_dep ** 2) )
+    t_stat_dep.append( calc_t_stat( pd.DataFrame(np.diag(residuals_dep ** 2) )
                                   ,X
                                   ,beta_hat
                                   ,0
@@ -454,21 +454,22 @@ for i in range(0, len(Y_dep.columns)):
                                                      beta_hat_restric
                                                      )
                                )
-    t_stat_resid_boot_dep.append(float(t_stat_b[i]))
+    t_stat_resid_boot_dep.append(float(t_stat_dep[i]))
     t_stat_resid_boot_dep.sort()
-    t_stat_wild_two_boot_dep.append(float(t_stat_b[i]))
+    t_stat_wild_two_boot_dep.append(float(t_stat_dep[i]))
     t_stat_wild_two_boot_dep.sort()
-    t_stat_wild_gaus_boot_dep.append(float(t_stat_b[i]))
+    t_stat_wild_gaus_boot_dep.append(float(t_stat_dep[i]))
     t_stat_wild_gaus_boot_dep.sort()  
-    t_stat_block_dep.append(float(t_stat_b[i]))
+    t_stat_block_dep.append(float(t_stat_dep[i]))
     t_stat_block_dep.sort()
-    t_stat_sieve_dep.append(float(t_stat_b[i]))
+    t_stat_sieve_dep.append(float(t_stat_dep[i]))
     t_stat_sieve_dep.sort()
 
-        ##check if condition is correct
+    ##check if condition is correct
     reject_resid_dep.append(abs(t_stat_dep[i]) <= t_stat_resid_boot_dep[5]  )
     reject_wild_two_dep.append( abs(t_stat_dep[i]) <= t_stat_wild_two_boot_dep[5] )  
     reject_wild_gaus_dep.append(abs(t_stat_dep[i]) <= t_stat_wild_gaus_boot_dep[5]  ) 
     reject_block_dep.append(abs(t_stat_dep[i]) <= t_stat_block_dep[5]  )
     reject_siev_dep.append( abs(t_stat_dep[i]) <= t_stat_sieve_dep[5] )  
+
 
