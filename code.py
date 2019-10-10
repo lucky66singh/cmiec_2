@@ -68,11 +68,23 @@ def residual_bootstrap(resid_under_null, y, x_restricted , X, beta_hat_restric )
      
     print('hi')
 
-def pairs_bootstrap():
+def pairs_bootstrap(y,X):
     print('hi')
     ## found some code that says to re arrange the indices of data and resample from that
     ## https://github.com/wblakecannon/DataCamp/blob/master/07-statistical-thinking-in-python-(part-2)/2-bootstrap-confidence%3Dintervals/a-function-to-do-pairs-bootstrap.py
+    index_shuf = np.random.choice(np.arange(0,len(y), 1), size=len(y) , replace=True)
+    y=y[index_shuf].reset_index(drop=True)
+    x=X.iloc[index_shuf].reset_index(drop=True)
     
+    (beta_hat_b, residuals_b) = calc_ols_estimator(x, y)    
+    t_stat_b =   calc_t_stat( pd.DataFrame(np.diag(residuals_b ** 2) )
+                                  ,X
+                                  ,beta_hat_b
+                                  ,1
+                             )
+    return(t_stat_b    
+    
+
 def approx_resid(y_a_r, x_a_r):
     beta_hat_ar = np.linalg.inv(x_a_r.transpose() @ x_a_r) @ (x_a_r.transpose() @ y_a_r)
     app_resid = y_a_r - x_a_r @ beta_hat_ar
