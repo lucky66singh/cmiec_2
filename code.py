@@ -137,7 +137,7 @@ def block_bootstrap(resid_under_null, y, x_restricted, X, beta_hat_restric):
                              )
     return(t_stat_b)
 
-def siege_bootstrap(resid_under_null, y, x_restricted, X, beta_hat_restric):
+def sieve_bootstrap(resid_under_null, y, x_restricted, X, beta_hat_restric):
     ar_mod = AR(resid_under_null)
     ## fit can also be done with other lag
     fit = ar_mod.fit(5, trend='nc')
@@ -287,18 +287,18 @@ for i in range(0, len(Y.columns)):
                                )
         
         
-        t_stat_resid_boot.append(float(t_stat_b[i]))
-        t_stat_resid_boot.sort()
-        t_stat_wild_two_boot.append(float(t_stat_b[i]))
-        t_stat_wild_two_boot.sort()
-        t_stat_wild_gaus_boot.append(float(t_stat_b[i]))
-        t_stat_wild_gaus_boot.sort()    
-        t_stat_two_pairs.append(float(t_stat_b[i]))
-        t_stat_two_pairs.sort()
-        reject_resid_boot.append(abs(t_stat_b[i]) <= t_stat_resid_boot[95]  )
-        reject_t_stat_wild_two.append( abs(t_stat_b[i]) <= t_stat_wild_two_boot[95] )  
-        reject_t_stat_wil_gaus.append(abs(t_stat_b[i]) <= t_stat_wild_gaus_boot[95]  ) 
-        reject_t_stat_two_pairs.append(abs(t_stat_b[i]) <= t_stat_two_pairs[95] )
+    t_stat_resid_boot.append(float(t_stat_b[i]))
+    t_stat_resid_boot.sort()
+    t_stat_wild_two_boot.append(float(t_stat_b[i]))
+    t_stat_wild_two_boot.sort()
+    t_stat_wild_gaus_boot.append(float(t_stat_b[i]))
+    t_stat_wild_gaus_boot.sort()    
+    t_stat_two_pairs.append(float(t_stat_b[i]))
+    t_stat_two_pairs.sort()
+    reject_resid_boot.append(abs(t_stat_b[i]) <= t_stat_resid_boot[95]  )
+    reject_t_stat_wild_two.append( abs(t_stat_b[i]) <= t_stat_wild_two_boot[95] )  
+    reject_t_stat_wil_gaus.append(abs(t_stat_b[i]) <= t_stat_wild_gaus_boot[95]  ) 
+    reject_t_stat_two_pairs.append(abs(t_stat_b[i]) <= t_stat_two_pairs[95] )
 
 
 Y_het = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_het.txt')
@@ -319,12 +319,70 @@ t_stat_lower_het = sum(t_stat_het <= np.array(-1.95))
 total_per_reject_het = (t_stat_lower_het) / len(Y_het.columns)
 print('Percentage rejected for 1B: ' + str(total_per_reject_het * 100) + '%')
 
+reject_resid_het=[]
+reject_wild_two_het=[]
+reject_wild_gaus_het=[]
+reject_block_het=[]
+reject_siev_het=[]
 for i in range(0, len(Y_het.columns)):
     (X_b,Y_b) = transform_ts_data(Y_het.iloc[:,i])
     (resid_under_null, beta_hat_restric) = ols_estimator_wo_intercept(Y_b,X_b.iloc[:,1] )
     t_stat_resid_boot_het=[]
     t_stat_wild_two_boot_het=[]
     t_stat_wild_gaus_boot_het=[]
-    t_stat_block=[]
-    t_stat_sieve=[]    
- 
+    t_stat_block_het=[]
+    t_stat_sieve_het=[]    
+    for j in range(0,B):
+        t_stat_resid_boot_het.append( residual_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+        t_stat_wild_two_boot_het.append( wild_bootstrap_two_point(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+        t_stat_wild_gaus_boot_het.append( wild_bootstrap_gaus(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )        
+        t_stat_block_het.append(block_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )   
+        t_stat_sieve_het.append(sieve_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+    t_stat_resid_boot_het.append(float(t_stat_b[i]))
+    t_stat_resid_boot_het.sort()
+    t_stat_wild_two_boot_het.append(float(t_stat_b[i]))
+    t_stat_wild_two_boot_het.sort()
+    t_stat_wild_gaus_boot_het.append(float(t_stat_b[i]))
+    t_stat_wild_gaus_boot_het.sort()  
+    t_stat_block_het.append(float(t_stat_b[i]))
+    t_stat_block_het.sort()
+    t_stat_sieve_het.append(float(t_stat_b[i]))
+    t_stat_sieve_het.sort()
+
+        ##check if condition is correct
+    reject_resid_het.append(abs(t_stat_het[i]) <= t_stat_resid_boot_het[5]  )
+    reject_wild_two_het.append( abs(t_stat_het[i]) <= t_stat_wild_two_boot_het[5] )  
+    reject_wild_gaus_het.append(abs(t_stat_het[i]) <= t_stat_wild_gaus_boot_het[5]  ) 
+    reject_block_het.append(abs(t_stat_het[i]) <= t_stat_block_het[5]  )
+    reject_siev_het.append( abs(t_stat_het[i]) <= t_stat_sieve_het[5] )  
+
