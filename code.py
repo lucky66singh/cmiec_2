@@ -22,7 +22,7 @@ def calc_ols_estimator(X,Y):
 def calc_t_stat(sigma, X,beta_hat ,element_of_interest):
     #xx_1 = np.linalg.inv(X.transpose() @ X)
     var_beta =  np.linalg.inv(X.transpose() @ X)    @ X.transpose() @ sigma @ X @ np.linalg.inv(X.transpose() @ X)
-    return beta_hat.iloc[element_of_interest] / np.sqrt(var_beta.iloc[element_of_interest][element_of_interest])
+    return float(beta_hat.iloc[element_of_interest] / np.sqrt(var_beta.iloc[element_of_interest][element_of_interest]))
     
 def wild_bootstrap_two_point(resid_under_null, y, x_restricted , X, beta_hat_restric):
     ber_samp = bernoulli.rvs(size=len(resid_under_null), p=0.5)
@@ -32,7 +32,7 @@ def wild_bootstrap_two_point(resid_under_null, y, x_restricted , X, beta_hat_res
     (beta_hat_b, residuals_b) = calc_ols_estimator(X, y_hat)
     t_stat_b =   calc_t_stat( pd.DataFrame(np.diag(residuals_b ** 2) )
                                   ,X
-                                  ,beta_hat_b
+                                  ,pd.DataFrame(beta_hat_b)
                                   ,1
                              )
     return(t_stat_b)
@@ -45,7 +45,7 @@ def wild_bootstrap_gaus(resid_under_null, y, x_restricted , X, beta_hat_restric)
     (beta_hat_b, residuals_b) = calc_ols_estimator(X, y_hat)
     t_stat_b =   calc_t_stat( pd.DataFrame(np.diag(residuals_b ** 2) )
                                   ,X
-                                  ,beta_hat_b
+                                  ,pd.DataFrame(beta_hat_b)
                                   ,1
                              )
     return(t_stat_b)
@@ -63,7 +63,7 @@ def residual_bootstrap(resid_under_null, y, x_restricted , X, beta_hat_restric )
     ## replace calc_t_stat with calc-stat which takes assignment number as input
     t_stat_b =   calc_t_stat( pd.DataFrame(np.diag(residuals_b ** 2) )
                                   ,X
-                                  ,beta_hat_b
+                                  ,pd.DataFrame(beta_hat_b)
                                   ,1
                              )
     return(t_stat_b)
@@ -179,7 +179,7 @@ def pairs_bootstrap(y,X):
     (beta_hat_b, residuals_b) = calc_ols_estimator(x, y)    
     t_stat_b =   calc_t_stat( pd.DataFrame(np.diag(residuals_b ** 2) )
                                   ,X
-                                  ,beta_hat_b
+                                  ,pd.DataFrame(beta_hat_b)
                                   ,1
                              )
     return(t_stat_b)  
@@ -300,6 +300,16 @@ for i in range(0, len(Y.columns)):
     reject_t_stat_wil_gaus.append(abs(t_stat_b[i]) <= t_stat_wild_gaus_boot[95]  ) 
     reject_t_stat_two_pairs.append(abs(t_stat_b[i]) <= t_stat_two_pairs[95] )
 
+percentage_reject_resid = 1 - sum(reject_resid_boot) / len(Y.columns)
+percentage_reject_wild_two = 1 - sum(reject_t_stat_wild_two) / len(Y.columns)
+percentage_reject_wild_gaus = 1 - sum(reject_t_stat_wil_gaus) / len(Y.columns)
+percentage_reject_two_pairs = 1 - sum(reject_t_stat_two_pairs) / len(Y.columns)
+print('Percentage rejected residuals bootstrap for 1c: ' + str(percentage_reject_resid * 100) + '%')
+print('Percentage rejected wild bs 2-point for 1c: ' + str(percentage_reject_wild_two * 100) + '%')
+print('Percentage rejected wild gaus for 1c: ' + str(percentage_reject_wild_gaus * 100) + '%')
+print('Percentage rejected tow pairs for 1c: ' + str(percentage_reject_two_pairs * 100) + '%')
+
+
 
 Y_het = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_het.txt')
 
@@ -317,7 +327,7 @@ for i in range(1, len(Y_het.columns)):
 t_stat_lower_het = sum(t_stat_het <= np.array(-1.95))
 #t_stat_higher = sum(t_stat_b >= np.array(1.96))
 total_per_reject_het = (t_stat_lower_het) / len(Y_het.columns)
-print('Percentage rejected for 1B: ' + str(total_per_reject_het * 100) + '%')
+print('Percentage rejected for 2B: ' + str(total_per_reject_het * 100) + '%')
 
 reject_resid_het=[]
 reject_wild_two_het=[]
@@ -385,6 +395,19 @@ for i in range(0, len(Y_het.columns)):
     reject_wild_gaus_het.append(abs(t_stat_het[i]) <= t_stat_wild_gaus_boot_het[5]  ) 
     reject_block_het.append(abs(t_stat_het[i]) <= t_stat_block_het[5]  )
     reject_siev_het.append( abs(t_stat_het[i]) <= t_stat_sieve_het[5] )  
+
+percentage_reject_resid_het = 1 - sum(reject_resid_het) / len(Y_het.columns)
+percentage_reject_wild_two_het = 1 - sum(reject_wild_two_het) / len(Y_het.columns)
+percentage_reject_wild_gaus_het = 1 - sum(reject_wild_gaus_het) / len(Y_het.columns)
+percentage_reject_block_het = 1 - sum(reject_block_het) / len(Y_het.columns)
+percentage_reject_siev_het = 1 - sum(reject_siev_het) / len(Y_het.columns)
+
+print('Percentage rejected residuals bootstrap for 2c: ' + str(percentage_reject_resid_het * 100) + '%')
+print('Percentage rejected wild 2point bootstrap for 2c: ' + str(percentage_reject_wild_two_het * 100) + '%')
+print('Percentage rejected wild gaus bootstrap for 2c: ' + str(percentage_reject_wild_gaus_het * 100) + '%')
+print('Percentage rejected block bs bootstrap for 2c: ' + str(percentage_reject_block_het * 100) + '%')
+print('Percentage rejected siev bs bootstrap for 2c: ' + str(percentage_reject_siev_het * 100) + '%')
+
 
 
 Y_dep = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_dep.txt')
@@ -473,3 +496,14 @@ for i in range(0, len(Y_dep.columns)):
     reject_siev_dep.append( abs(t_stat_dep[i]) <= t_stat_sieve_dep[5] )  
 
 
+percentage_reject_resid_dep = 1 - sum(reject_resid_dep) / len(Y_dep.columns)
+percentage_reject_wild_two_dep = 1 - sum(reject_wild_two_dep) / len(Y_dep.columns)
+percentage_reject_wild_gaus_dep = 1 - sum(reject_wild_gaus_dep) / len(Y_dep.columns)
+percentage_reject_block_dep = 1 - sum(reject_block_dep) / len(Y_dep.columns)
+percentage_reject_siev_dep = 1 - sum(reject_siev_dep) / len(Y_dep.columns)
+
+print('Percentage rejected residuals bootstrap for 2c: ' + str(percentage_reject_resid_dep * 100) + '%')
+print('Percentage rejected wild 2point bootstrap for 2c: ' + str(percentage_reject_wild_two_dep * 100) + '%')
+print('Percentage rejected wild gaus bootstrap for 2c: ' + str(percentage_reject_wild_gaus_dep * 100) + '%')
+print('Percentage rejected block bs bootstrap for 2c: ' + str(percentage_reject_block_dep * 100) + '%')
+print('Percentage rejected siev bs bootstrap for 2c: ' + str(percentage_reject_siev_dep * 100) + '%')
