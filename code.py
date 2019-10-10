@@ -386,3 +386,89 @@ for i in range(0, len(Y_het.columns)):
     reject_block_het.append(abs(t_stat_het[i]) <= t_stat_block_het[5]  )
     reject_siev_het.append( abs(t_stat_het[i]) <= t_stat_sieve_het[5] )  
 
+
+Y_dep = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_dep.txt')
+
+t_stat_dep=[]
+for i in range(1, len(Y_dep.columns)):
+    (X,Y) = transform_ts_data(Y_dep.iloc[:,i])
+    (beta_hat_dep, residuals_dep) = calc_ols_estimator(X,Y)
+    t_stat_b.append( calc_t_stat( pd.DataFrame(np.diag(residuals_dep ** 2) )
+                                  ,X
+                                  ,beta_hat
+                                  ,0
+                                )
+                    )
+
+t_stat_lower_dep = sum(t_stat_dep <= np.array(-1.95))
+#t_stat_higher = sum(t_stat_b >= np.array(1.96))
+total_per_reject_dep = (t_stat_lower_dep) / len(Y_dep.columns)
+print('Percentage rejected for 1B: ' + str(total_per_reject_dep * 100) + '%')
+
+reject_resid_dep=[]
+reject_wild_two_dep=[]
+reject_wild_gaus_dep=[]
+reject_block_dep=[]
+reject_siev_dep=[]
+for i in range(0, len(Y_dep.columns)):
+    (X_b,Y_b) = transform_ts_data(Y_dep.iloc[:,i])
+    (resid_under_null, beta_hat_restric) = ols_estimator_wo_intercept(Y_b,X_b.iloc[:,1] )
+    t_stat_resid_boot_dep=[]
+    t_stat_wild_two_boot_dep=[]
+    t_stat_wild_gaus_boot_dep=[]
+    t_stat_block_dep=[]
+    t_stat_sieve_dep=[]    
+    for j in range(0,B):
+        t_stat_resid_boot_dep.append( residual_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+        t_stat_wild_two_boot_dep.append( wild_bootstrap_two_point(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+        t_stat_wild_gaus_boot_dep.append( wild_bootstrap_gaus(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )        
+        t_stat_block_dep.append(block_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )   
+        t_stat_sieve_dep.append(sieve_bootstrap(resid_under_null,
+                                                     Y.iloc[:,i],
+                                                     X.iloc[:,[0,2]],
+                                                     X,
+                                                     beta_hat_restric
+                                                     )
+                               )
+    t_stat_resid_boot_dep.append(float(t_stat_b[i]))
+    t_stat_resid_boot_dep.sort()
+    t_stat_wild_two_boot_dep.append(float(t_stat_b[i]))
+    t_stat_wild_two_boot_dep.sort()
+    t_stat_wild_gaus_boot_dep.append(float(t_stat_b[i]))
+    t_stat_wild_gaus_boot_dep.sort()  
+    t_stat_block_dep.append(float(t_stat_b[i]))
+    t_stat_block_dep.sort()
+    t_stat_sieve_dep.append(float(t_stat_b[i]))
+    t_stat_sieve_dep.sort()
+
+        ##check if condition is correct
+    reject_resid_dep.append(abs(t_stat_dep[i]) <= t_stat_resid_boot_dep[5]  )
+    reject_wild_two_dep.append( abs(t_stat_dep[i]) <= t_stat_wild_two_boot_dep[5] )  
+    reject_wild_gaus_dep.append(abs(t_stat_dep[i]) <= t_stat_wild_gaus_boot_dep[5]  ) 
+    reject_block_dep.append(abs(t_stat_dep[i]) <= t_stat_block_dep[5]  )
+    reject_siev_dep.append( abs(t_stat_dep[i]) <= t_stat_sieve_dep[5] )  
+
