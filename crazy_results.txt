@@ -1,0 +1,6 @@
+Percentage rejected for 2B: 0.0%
+Percentage rejected residuals bootstrap for 2c: 100.0%
+Percentage rejected wild 2point bootstrap for 2c: 100.0%
+Percentage rejected wild gaus bootstrap for 2c: 100.0%
+Percentage rejected block bs bootstrap for 2c: 97.89999999999999%
+Percentage rejected siev bs bootstrap for 2c: 100.0%

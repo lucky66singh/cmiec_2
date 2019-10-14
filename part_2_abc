@@ -73,7 +73,7 @@ def residual_bootstrap_2(resid_under_null, y, x_restricted , X, beta_hat_restric
     sample_resid = np.random.choice(resid_under_null, size=len(resid_under_null), replace=True) - np.mean(resid_under_null)
     ##make diff method to calc y_hat
     y_hat =np.zeros(len(sample_resid))
-    y_hat[0] = beta_hat_restric * x_restricted[0] + sample_resid[0]
+    y_hat[0] = beta_hat_restric * x_restricted.iloc[0] + sample_resid[0]
     for i in range(1, len(sample_resid)):
         y_hat[i] = beta_hat_restric * y_hat[i - 1] + sample_resid[i]
         
@@ -92,7 +92,7 @@ def wild_bootstrap_two_point_2(resid_under_null, y, x_restricted , X, beta_hat_r
     ber_samp[ber_samp == 0] = -1
     resid_v = resid_under_null * ber_samp
     y_hat =np.zeros(len(resid_v))
-    y_hat[0] = beta_hat_restric * x_restricted[0] + resid_v[0]
+    y_hat[0] = beta_hat_restric * x_restricted.iloc[0] + resid_v[0]
     for i in range(1, len(resid_v)):
         y_hat[i] = beta_hat_restric * y_hat[i - 1] + resid_v[i]
         
@@ -108,7 +108,7 @@ def wild_bootstrap_gaus_2(resid_under_null, y, x_restricted , X, beta_hat_restri
     nor_samp = np.random.normal(size=len(resid_under_null))
     resid_v = resid_under_null * nor_samp
     y_hat =np.zeros(len(resid_v))
-    y_hat[0] = beta_hat_restric * x_restricted[0] + resid_v[0]
+    y_hat[0] = beta_hat_restric * x_restricted.iloc[0] + resid_v[0]
     for i in range(1, len(resid_v)):
         y_hat[i] = beta_hat_restric * y_hat[i - 1] + resid_v[i]
     (beta_hat_b, residuals_b) = calc_ols_estimator(X, y_hat)
@@ -126,7 +126,7 @@ def block_bootstrap(resid_under_null, y, x_restricted, X, beta_hat_restric):
     index_shuf = np.random.choice(np.arange(0,len(B), 1), size=3 , replace=True)
     resid_bs = pd.concat([B.iloc[:,index_shuf[0]], B.iloc[:,index_shuf[1]], B.iloc[:,index_shuf[2]]], axis=0, ignore_index=True)
     y_hat =np.zeros(len(resid_under_null))
-    y_hat[0] = beta_hat_restric * x_restricted[0] + resid_bs[0]
+    y_hat[0] = beta_hat_restric * x_restricted.iloc[0] + resid_bs[0]
     for i in range(1, len(resid_under_null)):
         y_hat[i] = beta_hat_restric * y_hat[i - 1] + resid_bs[i]    
     (beta_hat_b, residuals_b) = calc_ols_estimator(X, y_hat)
@@ -153,7 +153,7 @@ def sieve_bootstrap(resid_under_null, y, x_restricted, X, beta_hat_restric):
         e_t_star[i] = np.dot(fit.params , e_t_star[i-len(fit.params) :i]) + heta_t_star[i]
     ## calcualt y_hat from e_t_star 
     y_hat =np.zeros(len(resid_under_null))
-    y_hat[0] = beta_hat_restric * x_restricted[0] + e_t_star[0]
+    y_hat[0] = beta_hat_restric * x_restricted.iloc[0] + e_t_star[0]
     for i in range(1, len(resid_under_null)):
         y_hat[i] = beta_hat_restric * y_hat[i - 1] + e_t_star[i]        
     (beta_hat_b, residuals_b) = calc_ols_estimator(X, y_hat)
@@ -206,8 +206,8 @@ def ols_estimator_wo_intercept(y_a_r,x_a_r):
     return(resid, phi)
     
     
-X=pd.read_csv('/home/lucky/cmiec_2/data/Regressors.txt', header=None)
-Y=pd.read_csv('/home/lucky/cmiec_2/data/Observables.txt', header=None)
+#X=pd.read_csv('/home/lucky/cmiec_2/data/Regressors.txt', header=None)
+#Y=pd.read_csv('/home/lucky/cmiec_2/data/Observables.txt', header=None)
 
 
 #for i in range(0,len(Y.columns)):
@@ -217,108 +217,19 @@ sign_level=0.05
 left_t_stat = 1 + sign_level/2 *(B+1 )
 right_t_stat = (1 -sign_level/2) * (B+1)
 
-#calc ols residuals and beta_hat
-beta_hat = np.linalg.inv(X.transpose() @ X) @ (X.transpose() @ Y)
-Y_predict = X @ beta_hat
-residuals = Y - Y_predict
-    
 
-## test if outcome for singele regression gave thge same values
-count=[]
-for i in range(1, len(Y.columns)):
-    beta_hat_z = np.linalg.inv(X.transpose() @ X) @ (X.transpose() @ Y.iloc[:,i])
-    Y_predict_beta_hat_1 = X @ beta_hat_z
-    residuals_1 = Y.iloc[:,i] - Y_predict_beta_hat_1
-    count.append( sum(round(residuals.iloc[:,i],4) ==round(residuals_1,4)) )
-
-t_stat_b=[]
-for i in range(1, len(residuals.columns)):
-    t_stat_b.append( calc_t_stat( pd.DataFrame(np.diag(residuals.iloc[:,i ] ** 2) )
-                                  ,X
-                                  ,beta_hat.iloc[:,i]
-                                  ,1
-                                )
-                    )
-
-t_stat_lower = sum(t_stat_b <= np.array(-1.96))
-t_stat_higher = sum(t_stat_b >= np.array(1.96))
-total_per_reject = (t_stat_higher + t_stat_lower) / len(residuals.columns)
-print('Percentage rejected for 1B: ' + str(total_per_reject * 100) + '%')
-
-## for estimating under null beta_1=0 
-reject_resid_boot=[]
-reject_t_stat_wild_two=[]
-reject_t_stat_wil_gaus=[]
-reject_t_stat_two_pairs=[]
-
-
-for i in range(0, len(Y.columns)):
-    (resid_under_null, beta_hat_restric) = approx_resid(Y.iloc[:,i] ,X.iloc[:,[0,2]] )
-    t_stat_resid_boot=[]
-    t_stat_wild_two_boot=[]
-    t_stat_wild_gaus_boot=[]
-    t_stat_two_pairs=[]
-    for j in range(0,B):
-        t_stat_resid_boot.append( residual_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-        t_stat_wild_two_boot.append( wild_bootstrap_two_point(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-        t_stat_wild_gaus_boot.append( wild_bootstrap_gaus(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-        t_stat_two_pairs.append( pairs_bootstrap( Y.iloc[:,i],
-                                                     X
-                                                 )
-                               )
-        
-        
-    t_stat_resid_boot.append(float(t_stat_b[i]))
-    t_stat_resid_boot.sort()
-    t_stat_wild_two_boot.append(float(t_stat_b[i]))
-    t_stat_wild_two_boot.sort()
-    t_stat_wild_gaus_boot.append(float(t_stat_b[i]))
-    t_stat_wild_gaus_boot.sort()    
-    t_stat_two_pairs.append(float(t_stat_b[i]))
-    t_stat_two_pairs.sort()
-    reject_resid_boot.append(abs(t_stat_b[i]) <= t_stat_resid_boot[95]  )
-    reject_t_stat_wild_two.append( abs(t_stat_b[i]) <= t_stat_wild_two_boot[95] )  
-    reject_t_stat_wil_gaus.append(abs(t_stat_b[i]) <= t_stat_wild_gaus_boot[95]  ) 
-    reject_t_stat_two_pairs.append(abs(t_stat_b[i]) <= t_stat_two_pairs[95] )
-
-percentage_reject_resid = 1 - sum(reject_resid_boot) / len(Y.columns)
-percentage_reject_wild_two = 1 - sum(reject_t_stat_wild_two) / len(Y.columns)
-percentage_reject_wild_gaus = 1 - sum(reject_t_stat_wil_gaus) / len(Y.columns)
-percentage_reject_two_pairs = 1 - sum(reject_t_stat_two_pairs) / len(Y.columns)
-print('Percentage rejected residuals bootstrap for 1c: ' + str(percentage_reject_resid * 100) + '%')
-print('Percentage rejected wild bs 2-point for 1c: ' + str(percentage_reject_wild_two * 100) + '%')
-print('Percentage rejected wild gaus for 1c: ' + str(percentage_reject_wild_gaus * 100) + '%')
-print('Percentage rejected tow pairs for 1c: ' + str(percentage_reject_two_pairs * 100) + '%')
 
 
 
 Y_het = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_het.txt')
 
 t_stat_het=[]
-for i in range(1, len(Y_het.columns)):
+for i in range(0, len(Y_het.columns)):
     (X,Y) = transform_ts_data(Y_het.iloc[:,i])
     (beta_hat_het, residuals_het) = calc_ols_estimator(X,Y)
     t_stat_het.append( calc_t_stat( pd.DataFrame(np.diag(residuals_het ** 2) )
                                   ,X
-                                  ,beta_hat
+                                  ,pd.DataFrame(beta_hat_het)
                                   ,0
                                 )
                     )
@@ -342,38 +253,44 @@ for i in range(0, len(Y_het.columns)):
     t_stat_block_het=[]
     t_stat_sieve_het=[]    
     for j in range(0,B):
-        t_stat_resid_boot_het.append( residual_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
+        
+        #residual_bootstrap_2(resid_under_null, y, x_restricted , X, beta_hat_restric )
+        y=Y_b
+        x_restricted = X_b.iloc[:,[1]]
+        X=X_b
+        
+        t_stat_resid_boot_het.append( residual_bootstrap_2(resid_under_null,
+                                                     Y_b,
+                                                     X_b.iloc[:,[1]],
+                                                     X_b,
                                                      beta_hat_restric
                                                      )
                                )
-        t_stat_wild_two_boot_het.append( wild_bootstrap_two_point(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
+        t_stat_wild_two_boot_het.append( wild_bootstrap_two_point_2(resid_under_null,
+                                                     Y_b,
+                                                     X_b.iloc[:,[1]],
+                                                     X_b,
                                                      beta_hat_restric
                                                      )
                                )
-        t_stat_wild_gaus_boot_het.append( wild_bootstrap_gaus(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
+        t_stat_wild_gaus_boot_het.append( wild_bootstrap_gaus_2(resid_under_null,
+                                                     Y_het.iloc[:,i],
+                                                     X_b.iloc[:,[1]],
+                                                     X_b,
                                                      beta_hat_restric
                                                      )
                                )        
         t_stat_block_het.append(block_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
+                                                     Y_b,
+                                                     X_b.iloc[:,[1]],
+                                                     X_b,
                                                      beta_hat_restric
                                                      )
                                )   
         t_stat_sieve_het.append(sieve_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
+                                                     Y_b,
+                                                     X_b.iloc[:,[1]],
+                                                     X_b,
                                                      beta_hat_restric
                                                      )
                                )
@@ -387,13 +304,13 @@ for i in range(0, len(Y_het.columns)):
     t_stat_block_het.sort()
     t_stat_sieve_het.append(float(t_stat_het[i]))
     t_stat_sieve_het.sort()
-
+        ##2.34
         ##check if condition is correct
-    reject_resid_het.append(abs(t_stat_het[i]) <= t_stat_resid_boot_het[5]  )
-    reject_wild_two_het.append( abs(t_stat_het[i]) <= t_stat_wild_two_boot_het[5] )  
-    reject_wild_gaus_het.append(abs(t_stat_het[i]) <= t_stat_wild_gaus_boot_het[5]  ) 
-    reject_block_het.append(abs(t_stat_het[i]) <= t_stat_block_het[5]  )
-    reject_siev_het.append( abs(t_stat_het[i]) <= t_stat_sieve_het[5] )  
+    reject_resid_het.append(abs(t_stat_het[i]) <= t_stat_resid_boot_het[95]  )
+    reject_wild_two_het.append( abs(t_stat_het[i]) <= t_stat_wild_two_boot_het[95] )  
+    reject_wild_gaus_het.append(abs(t_stat_het[i]) <= t_stat_wild_gaus_boot_het[95]  ) 
+    reject_block_het.append(abs(t_stat_het[i]) <= t_stat_block_het[95]  )
+    reject_siev_het.append( abs(t_stat_het[i]) <= t_stat_sieve_het[95] )  
 
 percentage_reject_resid_het = 1 - sum(reject_resid_het) / len(Y_het.columns)
 percentage_reject_wild_two_het = 1 - sum(reject_wild_two_het) / len(Y_het.columns)
@@ -408,101 +325,3 @@ print('Percentage rejected block bs bootstrap for 2c: ' + str(percentage_reject_
 print('Percentage rejected siev bs bootstrap for 2c: ' + str(percentage_reject_siev_het * 100) + '%')
 
 
-
-Y_dep = pd.read_csv('/home/lucky/cmiec_2/data/Timeseries_dep.txt')
-
-t_stat_dep=[]
-for i in range(1, len(Y_dep.columns)):
-    (X,Y) = transform_ts_data(Y_dep.iloc[:,i])
-    (beta_hat_dep, residuals_dep) = calc_ols_estimator(X,Y)
-    t_stat_dep.append( calc_t_stat( pd.DataFrame(np.diag(residuals_dep ** 2) )
-                                  ,X
-                                  ,beta_hat
-                                  ,0
-                                )
-                    )
-
-t_stat_lower_dep = sum(t_stat_dep <= np.array(-1.95))
-#t_stat_higher = sum(t_stat_b >= np.array(1.96))
-total_per_reject_dep = (t_stat_lower_dep) / len(Y_dep.columns)
-print('Percentage rejected for 1B: ' + str(total_per_reject_dep * 100) + '%')
-
-reject_resid_dep=[]
-reject_wild_two_dep=[]
-reject_wild_gaus_dep=[]
-reject_block_dep=[]
-reject_siev_dep=[]
-for i in range(0, len(Y_dep.columns)):
-    (X_b,Y_b) = transform_ts_data(Y_dep.iloc[:,i])
-    (resid_under_null, beta_hat_restric) = ols_estimator_wo_intercept(Y_b,X_b.iloc[:,1] )
-    t_stat_resid_boot_dep=[]
-    t_stat_wild_two_boot_dep=[]
-    t_stat_wild_gaus_boot_dep=[]
-    t_stat_block_dep=[]
-    t_stat_sieve_dep=[]    
-    for j in range(0,B):
-        t_stat_resid_boot_dep.append( residual_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-        t_stat_wild_two_boot_dep.append( wild_bootstrap_two_point(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-        t_stat_wild_gaus_boot_dep.append( wild_bootstrap_gaus(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )        
-        t_stat_block_dep.append(block_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )   
-        t_stat_sieve_dep.append(sieve_bootstrap(resid_under_null,
-                                                     Y.iloc[:,i],
-                                                     X.iloc[:,[0,2]],
-                                                     X,
-                                                     beta_hat_restric
-                                                     )
-                               )
-    t_stat_resid_boot_dep.append(float(t_stat_dep[i]))
-    t_stat_resid_boot_dep.sort()
-    t_stat_wild_two_boot_dep.append(float(t_stat_dep[i]))
-    t_stat_wild_two_boot_dep.sort()
-    t_stat_wild_gaus_boot_dep.append(float(t_stat_dep[i]))
-    t_stat_wild_gaus_boot_dep.sort()  
-    t_stat_block_dep.append(float(t_stat_dep[i]))
-    t_stat_block_dep.sort()
-    t_stat_sieve_dep.append(float(t_stat_dep[i]))
-    t_stat_sieve_dep.sort()
-
-    ##check if condition is correct
-    reject_resid_dep.append(abs(t_stat_dep[i]) <= t_stat_resid_boot_dep[5]  )
-    reject_wild_two_dep.append( abs(t_stat_dep[i]) <= t_stat_wild_two_boot_dep[5] )  
-    reject_wild_gaus_dep.append(abs(t_stat_dep[i]) <= t_stat_wild_gaus_boot_dep[5]  ) 
-    reject_block_dep.append(abs(t_stat_dep[i]) <= t_stat_block_dep[5]  )
-    reject_siev_dep.append( abs(t_stat_dep[i]) <= t_stat_sieve_dep[5] )  
-
-
-percentage_reject_resid_dep = 1 - sum(reject_resid_dep) / len(Y_dep.columns)
-percentage_reject_wild_two_dep = 1 - sum(reject_wild_two_dep) / len(Y_dep.columns)
-percentage_reject_wild_gaus_dep = 1 - sum(reject_wild_gaus_dep) / len(Y_dep.columns)
-percentage_reject_block_dep = 1 - sum(reject_block_dep) / len(Y_dep.columns)
-percentage_reject_siev_dep = 1 - sum(reject_siev_dep) / len(Y_dep.columns)
-
-print('Percentage rejected residuals bootstrap for 2d: ' + str(percentage_reject_resid_dep * 100) + '%')
-print('Percentage rejected wild 2point bootstrap for 2d: ' + str(percentage_reject_wild_two_dep * 100) + '%')
-print('Percentage rejected wild gaus bootstrap for 2d: ' + str(percentage_reject_wild_gaus_dep * 100) + '%')
-print('Percentage rejected block bs bootstrap for 2d: ' + str(percentage_reject_block_dep * 100) + '%')
-print('Percentage rejected siev bs bootstrap for 2d: ' + str(percentage_reject_siev_dep * 100) + '%')
